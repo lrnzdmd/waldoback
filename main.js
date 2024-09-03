@@ -74,12 +74,12 @@ app.post('/targethit', (req, res) => {
 
         if (req.session.targetsFound.length === 3) {
             req.session.wonGame = true;
-            return res.status(200).json({message: 'you found all the targets!', targetsFound: req.session.targetsFound, wonGame: true });
+            return res.status(200).json({message: 'you found all the targets!', targetsFound: req.session.targetsFound, wonGame: req.session.targetsFound.length === 3 });
         }
-        return res.status(200).json({message: 'target found!', targetsFound: req.session.targetsFound, wonGame: false});
+        return res.status(200).json({message: 'target found!', targetsFound: req.session.targetsFound, wonGame: req.session.targetsFound.length === 3});
 
     } else {
-        return res.status(200).json({message: 'target not correct!', targetsFound: req.session.targetsFound, wonGame:false});
+        return res.status(200).json({message: 'target not correct!', targetsFound: req.session.targetsFound, wonGame:req.session.targetsFound.length === 3});
     }
 
 });
