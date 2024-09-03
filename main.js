@@ -68,7 +68,8 @@ app.post('/targethit', (req, res) => {
     const hitId = req.body.hitId;
     const target = targetsPosition[hitId - 1];
     const isHit = Math.abs(hitX - target.position.x) < 0.025 && Math.abs(hitY - target.position.y) < 0.025 
-    if (isHit && !req.session.targetsFound.find(target => target.id === hitId)) {
+    const alreadyFound = req.session.targetsFound.some(t => t.id == hitId);
+    if (isHit && !alreadyFound) {
         req.session.targetsFound.push(target);
 
         if (req.session.targetsFound.length === 3) {
