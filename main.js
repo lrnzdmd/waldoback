@@ -17,6 +17,11 @@ const pgPool = new pg.Pool({
 
 const app = express();
 const port = 3000;
+const cors = require('cors');
+app.use(cors());
+
+app.use(express.json({ type: 'application/json', limit: '10mb', charset: 'utf-8' })); 
+app.use(express.urlencoded({ extended: true, limit: '10mb', charset: 'utf-8' })); 
 
 app.use(session({
     store: new PgSession({
@@ -28,9 +33,6 @@ app.use(session({
     saveUninitialized: false, 
     cookie: {
         maxAge: 30 * 24 * 60 * 60 * 1000, 
-        secure: false,
-        httpOnly: true, 
-        sameSite: 'strict' 
     }
 }));
 
@@ -44,7 +46,9 @@ app.use((req, res, next) => {
     next();
 });
 
-
+app.get('/', (req, res) => {
+    return res.status(200).send('hello');
+})
 
 app.post('/startgame', (req, res) => {
     if (!req.session.startTime) {
@@ -78,8 +82,8 @@ app.post('/targethit', (req, res) => {
 
 app.get('/leaderboard', async (req, res) => {
     try {
-        const { leaderboard } = await pgPool.query("SELECT * FROM leaderboard ORDER BY timeToComplete ASC;");
-        return res.status(200).json({message:'leaderboard loaded', leaderboard:leaderboard});
+        const { rows } = await pgPool.query("SELECT * FROM leaderboard ORDER BY timeToComplete ASC;");
+        return res.status(200).json({message:'leaderboard loaded', leaderboard:rows});
     } catch (error) {
         console.error(error);
             res.status(500).json({error:error});
@@ -90,7 +94,7 @@ app.post('/leaderboard', async (req, res) => {
     if (req.session.wonGame) {
         const timeToComplete = (req.session.startTime - new Date()) / 1000;
         try {
-        const {newentry} = await pgPool.query("INSERT INTO leaderboard (username, timeToComplete) VALUES ($1,$2)",[req.body.username, timeToComplete.toFixed(2)])
+        const {rows} = await pgPool.query("INSERT INTO leaderboard (username, timeToComplete) VALUES ($1,$2)",[req.body.username, timeToComplete.toFixed(2)])
         req.session.destroy((err) => {
             if (err) {
                 return res.status(500).json({error:err});
