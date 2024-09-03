@@ -1,0 +1,113 @@
+const express = require('express'); 
+const session = require('express-session');
+const pg = require('pg');
+const dotenv = require('dotenv');
+const PgSession = require('connect-pg-simple')(session);
+
+const targetsPosition = [
+                            { id: 1, name: 'Weedle', position: {x: 0.66 , y: 0.5 } },
+                            { id: 2, name: 'Shellder', position: {x: 0.24 , y: 0.95 } },
+                            { id: 3, name: 'Butterfree', position: {x: 0.9 , y: 0.43 } },
+                        ]
+
+dotenv.config();
+const pgPool = new pg.Pool({
+    connectionString: 'postgresql://inventory_owner:8j2GeSQrngOR@ep-square-cake-a2i6v0fm.eu-central-1.aws.neon.tech/waldo?sslmode=require'
+});
+
+const app = express();
+const port = 3000;
+
+app.use(session({
+    store: new PgSession({
+        pool: pgPool, 
+        tableName: 'session' 
+    }),
+    secret: process.env.SESSION_SECRET, 
+    resave: false, 
+    saveUninitialized: false, 
+    cookie: {
+        maxAge: 30 * 24 * 60 * 60 * 1000, 
+        secure: false,
+        httpOnly: true, 
+        sameSite: 'strict' 
+    }
+}));
+
+
+
+
+
+
+app.use((req, res, next) => {
+    console.log(`${req.method} ${req.url}`);
+    next();
+});
+
+
+
+app.post('/startgame', (req, res) => {
+    if (!req.session.startTime) {
+        req.session.startTime = new Date();
+        req.session.targetsFound = [];
+        res.status(200).json({message: 'new game started', targetsFound: req.session.targetsFound });
+    } else {
+        res.status(200).json({message: 'resuming game started on ' + req.session.startTime.toString().substring(0,24), targetsFound: req.session.targetsFound});
+    }
+});
+
+app.post('/targethit', (req, res) => {
+    const hitX = req.body.hitX;
+    const hitY = req.body.hitY;
+    const hitId = req.body.hitId;
+    const isHit = Math.abs(hitX - targetsPosition[hitId].position.x) < 0.025 && Math.abs(hitY - targetsPosition[hitId].position.y) < 0.025 
+    if (isHit && !req.session.targetsFound.find(target => target.id === hitId)) {
+        req.session.targetsFound.push(targetsPosition[hitId]);
+
+        if (req.session.targetsFound.length === 3) {
+            req.session.wonGame = true;
+            return res.status(200).json({message: 'you found all the targets!', targetsFound: req.session.targetsFound, wonGame: true });
+        }
+        return res.status(200).json({message: 'target found!', targetsFound: req.session.targetsFound, wonGame: false});
+
+    } else {
+        return res.status(200).json({message: 'target not correct!', targetsFound: req.session.targetsFound, wonGame:false});
+    }
+
+});
+
+app.get('/leaderboard', (req, res) => {
+    try {
+        const { leaderboard } = pgPool.query("SELECT * FROM leaderboard ORDER BY timeToComplete ASC;");
+        return res.status(200).json({message:'leaderboard loaded', leaderboard:leaderboard});
+    } catch (error) {
+        console.error(error);
+            res.status(500).json({error:error});
+    }
+});
+
+app.post('/leaderboard', (req, res) => {
+    if (req.session.wonGame) {
+        const timeToComplete = (req.session.startTime - new Date()) / 1000;
+        try {
+        pgPool.query("INSERT INTO leaderboard (username, timeToComplete) VALUES ($1,$2)",[req.body.username, timeToComplete.toFixed(2)])
+        req.session.destroy((err) => {
+            if (err) {
+                return res.status(500).json({error:err});
+            }
+        }) }
+        catch (error) { 
+            console.error(error);
+            res.status(500).json({error:error});
+        }
+    
+    } else {
+        res.status(403).json({message:'nice try'});
+    }
+})
+
+
+
+app.listen(port, () => {
+    console.log(`Server listening http://localhost:${port}`);
+});
