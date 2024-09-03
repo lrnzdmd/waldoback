@@ -69,9 +69,10 @@ app.post('/targethit', (req, res) => {
     const target = targetsPosition[hitId - 1];
     const isHit = Math.abs(hitX - target.position.x) < 0.025 && Math.abs(hitY - target.position.y) < 0.025 
     const alreadyFound = req.session.targetsFound.some(t => t.id == hitId);
+    console.log(`click at x${hitX} y${hitY}`);
     if (isHit && !alreadyFound) {
+        console.log('target hit!')
         req.session.targetsFound.push(target);
-
         if (req.session.targetsFound.length === 3) {
             req.session.wonGame = true;
             return res.status(200).json({message: 'you found all the targets!', targetsFound: req.session.targetsFound, wonGame: req.session.targetsFound.length === 3 });
@@ -79,6 +80,7 @@ app.post('/targethit', (req, res) => {
         return res.status(200).json({message: 'target found!', targetsFound: req.session.targetsFound, wonGame: req.session.targetsFound.length === 3});
 
     } else {
+        console.log('target missed!');
         return res.status(200).json({message: 'target not correct!', targetsFound: req.session.targetsFound, wonGame:req.session.targetsFound.length === 3});
     }
 
@@ -95,7 +97,9 @@ app.get('/leaderboard', async (req, res) => {
 });
 
 app.post('/leaderboard', async (req, res) => {
+    console.log('leaderboard called');
     if (req.session.wonGame) {
+        console.log('wincheck successful');
         const timeToComplete = (req.session.startTime - new Date()) / 1000;
         try {
         const {rows} = await pgPool.query("INSERT INTO leaderboard (username, timeToComplete) VALUES ($1,$2)",[req.body.username, timeToComplete.toFixed(2)])
@@ -103,7 +107,9 @@ app.post('/leaderboard', async (req, res) => {
             if (err) {
                 return res.status(500).json({error:err});
             }
-        }) }
+        })
+        console.log('name should have entered leaderboard.');
+             }
         catch (error) { 
             console.error(error);
             res.status(500).json({error:error});
