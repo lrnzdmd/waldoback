@@ -66,9 +66,10 @@ app.post('/targethit', (req, res) => {
     const hitX = req.body.hitX;
     const hitY = req.body.hitY;
     const hitId = req.body.hitId;
-    const isHit = Math.abs(hitX - targetsPosition[hitId].position.x) < 0.025 && Math.abs(hitY - targetsPosition[hitId].position.y) < 0.025 
+    const target = targetsPosition[hitId - 1];
+    const isHit = Math.abs(hitX - target.position.x) < 0.025 && Math.abs(hitY - target.position.y) < 0.025 
     if (isHit && !req.session.targetsFound.find(target => target.id === hitId)) {
-        req.session.targetsFound.push(targetsPosition[hitId - 1]);
+        req.session.targetsFound.push(target);
 
         if (req.session.targetsFound.length === 3) {
             req.session.wonGame = true;
