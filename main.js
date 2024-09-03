@@ -76,9 +76,9 @@ app.post('/targethit', (req, res) => {
 
 });
 
-app.get('/leaderboard', (req, res) => {
+app.get('/leaderboard', async (req, res) => {
     try {
-        const { leaderboard } = pgPool.query("SELECT * FROM leaderboard ORDER BY timeToComplete ASC;");
+        const { leaderboard } = await pgPool.query("SELECT * FROM leaderboard ORDER BY timeToComplete ASC;");
         return res.status(200).json({message:'leaderboard loaded', leaderboard:leaderboard});
     } catch (error) {
         console.error(error);
@@ -86,11 +86,11 @@ app.get('/leaderboard', (req, res) => {
     }
 });
 
-app.post('/leaderboard', (req, res) => {
+app.post('/leaderboard', async (req, res) => {
     if (req.session.wonGame) {
         const timeToComplete = (req.session.startTime - new Date()) / 1000;
         try {
-        pgPool.query("INSERT INTO leaderboard (username, timeToComplete) VALUES ($1,$2)",[req.body.username, timeToComplete.toFixed(2)])
+        const {newentry} = await pgPool.query("INSERT INTO leaderboard (username, timeToComplete) VALUES ($1,$2)",[req.body.username, timeToComplete.toFixed(2)])
         req.session.destroy((err) => {
             if (err) {
                 return res.status(500).json({error:err});
