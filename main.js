@@ -1,8 +1,10 @@
 const express = require('express'); 
 const session = require('express-session');
+const path = require('path');
 const pg = require('pg');
 const dotenv = require('dotenv');
 const PgSession = require('connect-pg-simple')(session);
+const cors = require('cors')
 
 const targetsPosition = [
                             { id: 1, name: 'Weedle', position: {x: 0.66 , y: 0.5 } },
@@ -17,11 +19,13 @@ const pgPool = new pg.Pool({
 
 const app = express();
 const port = 3000;
-const cors = require('cors');
-app.use(cors());
+
+app.use(express.static(path.join(__dirname, 'dist')));
+
 
 app.use(express.json({ type: 'application/json', limit: '10mb', charset: 'utf-8' })); 
 app.use(express.urlencoded({ extended: true, limit: '10mb', charset: 'utf-8' })); 
+app.use(cors())
 
 app.use(session({
     store: new PgSession({
@@ -46,9 +50,7 @@ app.use((req, res, next) => {
     next();
 });
 
-app.get('/', (req, res) => {
-    return res.status(200).send('hello');
-})
+
 
 app.post('/startgame', (req, res) => {
     if (!req.session.startTime) {
@@ -108,7 +110,11 @@ app.post('/leaderboard', async (req, res) => {
     } else {
         res.status(403).json({message:'nice try'});
     }
-})
+});
+
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+});
 
 
 
