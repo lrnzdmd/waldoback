@@ -55,6 +55,7 @@ app.use((req, res, next) => {
 app.post('/startgame', (req, res) => {
     if (!req.session.startTime) {
         req.session.startTime = new Date();
+        
         req.session.targetsFound = [];
         res.status(200).json({message: 'new game started', targetsFound: req.session.targetsFound });
     } else {
@@ -97,11 +98,13 @@ app.get('/leaderboard', async (req, res) => {
 });
 
 app.post('/leaderboard', async (req, res) => {
-    console.log(req.session.startTime);
+    
     console.log('leaderboard called');
     if (req.session.wonGame) {
         console.log('wincheck successful');
-        const timeToComplete = (new Date() - req.session.startTime) / 1000;
+        const startTime = new Date(req.session.startTime);
+        const timeToComplete = (new Date() - startTime) / 1000;
+        
         try {
         const {rows} = await pgPool.query("INSERT INTO leaderboard (username, timeToComplete) VALUES ($1,$2)",[req.body.username, timeToComplete.toFixed(2)])
         req.session.destroy((err) => {
