@@ -97,6 +97,7 @@ app.get('/leaderboard', async (req, res) => {
 });
 
 app.post('/leaderboard', async (req, res) => {
+    console.log(req.session.startTime);
     console.log('leaderboard called');
     if (req.session.wonGame) {
         console.log('wincheck successful');
