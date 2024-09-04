@@ -107,7 +107,7 @@ app.post('/leaderboard', async (req, res) => {
         const timeToComplete = (endTime - startTime) / 1000;
         
         try {
-        const {rows} = await pgPool.query("INSERT INTO leaderboard (username, timeToComplete) VALUES ($1,$2)",[req.body.username, timeToComplete.toFixed(2)])
+        const {rows} = await pgPool.query("INSERT INTO leaderboard (username, timeToComplete) VALUES ($1,$2)",[req.body.username, timeToComplete])
         req.session.destroy((err) => {
             if (err) {
                 return res.status(500).json({error:err});
