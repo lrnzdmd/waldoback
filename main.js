@@ -100,15 +100,17 @@ app.post('/leaderboard', async (req, res) => {
     console.log('leaderboard called');
     if (req.session.wonGame) {
         console.log('wincheck successful');
-        const timeToComplete = (req.session.startTime - new Date()) / 1000;
+        const timeToComplete = (new Date() - req.session.startTime) / 1000;
         try {
         const {rows} = await pgPool.query("INSERT INTO leaderboard (username, timeToComplete) VALUES ($1,$2)",[req.body.username, timeToComplete.toFixed(2)])
         req.session.destroy((err) => {
             if (err) {
                 return res.status(500).json({error:err});
             }
+            console.log('name should have entered leaderboard.');
+            res.status(200).json({message: 'leaderboard updated'});
         })
-        console.log('name should have entered leaderboard.');
+        
              }
         catch (error) { 
             console.error(error);
