@@ -103,7 +103,8 @@ app.post('/leaderboard', async (req, res) => {
     if (req.session.wonGame) {
         console.log('wincheck successful');
         const startTime = new Date(req.session.startTime);
-        const timeToComplete = (new Date() - startTime) / 1000;
+        const endTime = new Date(req.body.endTime);
+        const timeToComplete = (endTime - startTime) / 1000;
         
         try {
         const {rows} = await pgPool.query("INSERT INTO leaderboard (username, timeToComplete) VALUES ($1,$2)",[req.body.username, timeToComplete.toFixed(2)])
